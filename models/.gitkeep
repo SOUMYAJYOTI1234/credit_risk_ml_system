@@ -1,0 +1,2 @@
+# This directory contains serialised model artefacts.
+# The trained model is saved as model.pkl by running: python -m src.train
