@@ -6,8 +6,8 @@ alerts when the metric drops below a configurable threshold.
 """
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 import numpy as np
@@ -82,7 +82,7 @@ class PerformanceMonitor:
         bool
             True if the AUC has dropped below the threshold (retraining alert).
         """
-        ts = timestamp or datetime.utcnow()
+        ts = timestamp or datetime.now(timezone.utc)
         auc = roc_auc_score(y_true, y_proba)
         alert = auc < self.auc_threshold
 
@@ -121,7 +121,7 @@ class PerformanceMonitor:
             return pd.DataFrame(columns=["timestamp", "auc", "n_samples", "triggered_alert"])
 
         days = days or self.window_days
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         recent = [r for r in self.history if r.timestamp >= cutoff]
 
         return pd.DataFrame([

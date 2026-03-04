@@ -14,10 +14,6 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")  # non-interactive backend for servers
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -29,6 +25,11 @@ from sklearn.metrics import (
 )
 
 from src.utils import get_reports_dir, save_json
+
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend – must be set before pyplot
+import matplotlib.pyplot as plt  # noqa: E402
+import seaborn as sns  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

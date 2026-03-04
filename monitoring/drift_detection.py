@@ -9,7 +9,7 @@ a reference (training) distribution and a production (serving) distribution:
 """
 
 import logging
-from typing import Dict, List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def ks_test_features(
     reference: pd.DataFrame,
     production: pd.DataFrame,
-    features: List[str] | None = None,
+    features: Optional[List[str]] = None,
     significance: float = 0.05,
 ) -> pd.DataFrame:
     """Run a two-sample KS test for each numeric feature.
@@ -124,7 +124,7 @@ def _compute_psi(
 def psi_all_features(
     reference: pd.DataFrame,
     production: pd.DataFrame,
-    features: List[str] | None = None,
+    features: Optional[List[str]] = None,
     n_bins: int = 10,
 ) -> pd.DataFrame:
     """Compute PSI for each feature.
@@ -179,7 +179,7 @@ def psi_all_features(
 def run_drift_report(
     reference: pd.DataFrame,
     production: pd.DataFrame,
-    features: List[str] | None = None,
+    features: Optional[List[str]] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Run both KS and PSI drift checks and return the results.
 

@@ -136,7 +136,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    from data_loader import load_cleaned_data
+    from src.data_loader import load_cleaned_data
 
     df = load_cleaned_data()
     df = engineer_features(df)

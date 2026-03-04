@@ -3,7 +3,6 @@ schemas.py - Pydantic Request / Response Schemas for the Credit Risk API
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class CreditApplicationRequest(BaseModel):

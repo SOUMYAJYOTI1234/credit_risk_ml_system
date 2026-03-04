@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Model definitions
 # ─────────────────────────────────────────────────────────────
 
+
 def get_models() -> Dict[str, Any]:
     """Return a dictionary of named model instances with sensible defaults."""
     return {

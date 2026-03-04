@@ -24,6 +24,7 @@ COPY --from=builder /install /usr/local
 COPY src/ ./src/
 COPY app/ ./app/
 COPY models/ ./models/
+COPY data/ ./data/
 COPY monitoring/ ./monitoring/
 
 # Expose the API port
