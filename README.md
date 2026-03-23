@@ -16,6 +16,30 @@ The model is trained on 30,000 historical records with 23 demographic and transa
 
 ---
 
+## 📈 Model Results
+
+Three models were trained and evaluated on a held-out 20% test set (6,000 samples):
+
+| Model | ROC-AUC | Precision | Recall | F1 |
+|---|:---:|:---:|:---:|:---:|
+| Logistic Regression | 0.7347 | 0.4723 | 0.5652 | 0.5146 |
+| **Random Forest ✓** | **0.7765** | **0.5160** | **0.5712** | **0.5422** |
+| XGBoost | 0.7675 | 0.4673 | 0.5863 | 0.5201 |
+
+> **Random Forest** was selected as the production model based on the highest cross-validated ROC-AUC.
+
+### SHAP Feature Importance
+
+SHAP (SHapley Additive exPlanations) values reveal which features drive the model's predictions:
+
+![SHAP Feature Importance — Mean absolute SHAP values per feature](reports/shap_feature_importance.png)
+
+### SHAP Summary Plot
+
+The beeswarm plot shows the direction and magnitude of each feature's impact on individual predictions:
+
+![SHAP Summary Plot — Feature impact distribution on model output](reports/shap_summary_plot.png)
+
 ## 🗂️ Project Structure
 
 ```
