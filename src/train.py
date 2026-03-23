@@ -18,6 +18,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 from xgboost import XGBClassifier
 
 from src.data_loader import load_cleaned_data
+from src.evaluate import evaluate_model
 from src.features import engineer_features
 from src.utils import split_data, get_models_dir, setup_logging, save_json, get_reports_dir
 
@@ -201,6 +202,7 @@ def run_training_pipeline() -> Tuple[str, Any]:
         4. Train & cross-validate all models
         5. Select best model
         6. Save best model + CV results
+        7. Evaluate on test set (metrics + plots)
 
     Returns
     -------
@@ -233,6 +235,14 @@ def run_training_pipeline() -> Tuple[str, Any]:
     test_path = os.path.join(get_models_dir(), "test_data.pkl")
     joblib.dump({"X_test": X_test, "y_test": y_test}, test_path)
     logger.info("Test data saved to %s", test_path)
+
+    # 7. Evaluate best model on test set → metrics JSON + plots
+    logger.info("Evaluating %s on the test set …", best_name)
+    metrics = evaluate_model(best_model, X_test, y_test, model_name=best_name)
+    logger.info(
+        "Test metrics → AUC: %.4f | F1: %.4f | AP: %.4f",
+        metrics["roc_auc"], metrics["f1_score"], metrics["average_precision"],
+    )
 
     return best_name, best_model
 
