@@ -28,9 +28,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run linting (optional)
+      - name: Run linting
         run: |
-          pip install flake8
           flake8 src/ app/ monitoring/ --max-line-length=120 --ignore=E501,W503
         continue-on-error: true
 
