@@ -32,6 +32,7 @@ models/*.joblib
 # Reports
 reports/*.png
 reports/*.html
+!reports/shap_*.png
 
 # Jupyter
 .ipynb_checkpoints/
@@ -45,3 +46,5 @@ docker-compose.override.yml
 
 # Logs
 *.log
+*.jsonl
+

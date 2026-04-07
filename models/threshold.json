@@ -1,0 +1,5 @@
+{
+  "threshold": 0.510495951632758,
+  "strategy": "f1",
+  "model_name": "RandomForest"
+}

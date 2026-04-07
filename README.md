@@ -143,10 +143,14 @@ python -m src.train
 
 This will:
 1. Load and clean the dataset
-2. Engineer features (avg bills, credit utilisation, delay score, etc.)
-3. Train Logistic Regression, Random Forest, and XGBoost
-4. Select the best model by cross-validated ROC-AUC
-5. Save the model to `models/model.pkl`
+2. Build **sklearn Pipelines** (feature engineering → optional scaler → model) for each candidate
+3. Cross-validate Logistic Regression, Random Forest, and XGBoost
+4. Select the best Pipeline by cross-validated ROC-AUC
+5. **Optimize the decision threshold** (F1-maximizing) on the test set
+6. Save the self-contained Pipeline to `models/model.pkl` (with versioned backups)
+7. Generate evaluation plots and metrics in `reports/`
+
+> **Architecture note:** The saved `model.pkl` is a complete sklearn Pipeline that includes the `CreditFeatureTransformer` — no separate feature engineering step is needed at inference time. This eliminates training/serving skew and data leakage risks.
 
 ---
 

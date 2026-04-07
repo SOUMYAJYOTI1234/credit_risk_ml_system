@@ -2,7 +2,8 @@
 test_model.py - Unit Tests for Model Loading and Prediction
 
 Verifies that:
-  • The trained model file exists and loads correctly.
+  • The trained model Pipeline exists and loads correctly.
+  • The Pipeline handles feature engineering + prediction end-to-end.
   • Predictions return valid probabilities in [0, 1].
 """
 
@@ -13,7 +14,6 @@ import pandas as pd
 import joblib
 
 from src.utils import get_models_dir
-from src.features import engineer_features
 
 
 # ─────────────────────────────────────────────────────────────
@@ -25,7 +25,10 @@ MODEL_PATH = os.path.join(get_models_dir(), "model.pkl")
 
 @pytest.fixture
 def sample_input() -> pd.DataFrame:
-    """Create a single-row DataFrame that mimics real input data."""
+    """Create a single-row DataFrame with raw input (no engineered features).
+
+    The Pipeline should handle feature engineering internally.
+    """
     data = {
         "limit_bal": [20000],
         "sex": [2],
@@ -54,15 +57,46 @@ def sample_input() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
+@pytest.fixture
+def edge_case_zeros() -> pd.DataFrame:
+    """Edge case: all bill and payment amounts are zero."""
+    data = {
+        "limit_bal": [50000],
+        "sex": [1],
+        "education": [1],
+        "marriage": [2],
+        "age": [30],
+        "pay_1": [0],
+        "pay_2": [0],
+        "pay_3": [0],
+        "pay_4": [0],
+        "pay_5": [0],
+        "pay_6": [0],
+        "bill_amt1": [0],
+        "bill_amt2": [0],
+        "bill_amt3": [0],
+        "bill_amt4": [0],
+        "bill_amt5": [0],
+        "bill_amt6": [0],
+        "pay_amt1": [0],
+        "pay_amt2": [0],
+        "pay_amt3": [0],
+        "pay_amt4": [0],
+        "pay_amt5": [0],
+        "pay_amt6": [0],
+    }
+    return pd.DataFrame(data)
+
+
 # ─────────────────────────────────────────────────────────────
 # Tests
 # ─────────────────────────────────────────────────────────────
 
 class TestModelLoading:
-    """Tests that the model loads correctly from disk."""
+    """Tests that the model Pipeline loads correctly from disk."""
 
     def test_model_file_exists(self):
-        """Check that models/model.pkl exists (skips in CI where model isn't trained)."""
+        """Check that models/model.pkl exists (skips in CI)."""
         if not os.path.exists(MODEL_PATH):
             pytest.skip(
                 f"Model file not found at {MODEL_PATH}. "
@@ -70,7 +104,7 @@ class TestModelLoading:
             )
 
     def test_model_loads_successfully(self):
-        """Check that joblib can deserialise the model."""
+        """Check that joblib can deserialise the Pipeline."""
         if not os.path.exists(MODEL_PATH):
             pytest.skip("Model file not available")
         model = joblib.load(MODEL_PATH)
@@ -78,28 +112,45 @@ class TestModelLoading:
         assert hasattr(model, "predict")
         assert hasattr(model, "predict_proba")
 
+    def test_model_is_pipeline(self):
+        """The saved model should be a sklearn Pipeline, not a raw estimator."""
+        if not os.path.exists(MODEL_PATH):
+            pytest.skip("Model file not available")
+        from sklearn.pipeline import Pipeline
+        model = joblib.load(MODEL_PATH)
+        assert isinstance(model, Pipeline), (
+            f"Expected Pipeline, got {type(model).__name__}"
+        )
+
 
 class TestModelPrediction:
-    """Tests that the loaded model returns valid predictions."""
+    """Tests that the loaded Pipeline returns valid predictions."""
+
+    def test_pipeline_end_to_end(self, sample_input):
+        """Full integration test: load Pipeline, feed raw input, get prediction."""
+        if not os.path.exists(MODEL_PATH):
+            pytest.skip("Model file not available")
+        pipeline = joblib.load(MODEL_PATH)
+        # Feed RAW input (no manual engineer_features call)
+        proba = pipeline.predict_proba(sample_input)
+        assert proba.shape == (1, 2)
+        assert 0.0 <= proba[0, 1] <= 1.0
 
     def test_predict_returns_array(self, sample_input):
         """Predictions should be a numpy array."""
         if not os.path.exists(MODEL_PATH):
             pytest.skip("Model file not available")
-        model = joblib.load(MODEL_PATH)
-        df = engineer_features(sample_input)
-        preds = model.predict(df)
+        pipeline = joblib.load(MODEL_PATH)
+        preds = pipeline.predict(sample_input)
         assert isinstance(preds, np.ndarray)
 
     def test_predict_proba_in_range(self, sample_input):
         """Probabilities should be between 0 and 1."""
         if not os.path.exists(MODEL_PATH):
             pytest.skip("Model file not available")
-        model = joblib.load(MODEL_PATH)
-        df = engineer_features(sample_input)
-        proba = model.predict_proba(df)
-
-        assert proba.shape[1] == 2  # binary classification
+        pipeline = joblib.load(MODEL_PATH)
+        proba = pipeline.predict_proba(sample_input)
+        assert proba.shape[1] == 2
         assert np.all(proba >= 0.0)
         assert np.all(proba <= 1.0)
 
@@ -107,8 +158,16 @@ class TestModelPrediction:
         """A single sample should produce exactly one prediction."""
         if not os.path.exists(MODEL_PATH):
             pytest.skip("Model file not available")
-        model = joblib.load(MODEL_PATH)
-        df = engineer_features(sample_input)
-        preds = model.predict(df)
+        pipeline = joblib.load(MODEL_PATH)
+        preds = pipeline.predict(sample_input)
         assert len(preds) == 1
         assert preds[0] in [0, 1]
+
+    def test_predict_edge_case_zeros(self, edge_case_zeros):
+        """All-zero amounts should not produce NaN probabilities."""
+        if not os.path.exists(MODEL_PATH):
+            pytest.skip("Model file not available")
+        pipeline = joblib.load(MODEL_PATH)
+        proba = pipeline.predict_proba(edge_case_zeros)
+        assert not np.any(np.isnan(proba)), "NaN probability for all-zero input"
+        assert 0.0 <= proba[0, 1] <= 1.0

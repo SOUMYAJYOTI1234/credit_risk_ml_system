@@ -106,3 +106,21 @@ class TestPredictEndpoint:
         partial = {"limit_bal": 20000, "sex": 1}
         response = client.post("/predict", json=partial)
         assert response.status_code == 422
+
+    def test_predict_edge_case_zeros(self, client):
+        """All-zero bill/payment amounts should not crash the API."""
+        payload = {
+            "limit_bal": 50000, "sex": 1, "education": 1, "marriage": 2, "age": 30,
+            "pay_1": 0, "pay_2": 0, "pay_3": 0, "pay_4": 0, "pay_5": 0, "pay_6": 0,
+            "bill_amt1": 0, "bill_amt2": 0, "bill_amt3": 0,
+            "bill_amt4": 0, "bill_amt5": 0, "bill_amt6": 0,
+            "pay_amt1": 0, "pay_amt2": 0, "pay_amt3": 0,
+            "pay_amt4": 0, "pay_amt5": 0, "pay_amt6": 0,
+        }
+        response = client.post("/predict", json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            assert 0.0 <= data["default_probability"] <= 1.0
+        else:
+            assert response.status_code == 503  # model not loaded
+
