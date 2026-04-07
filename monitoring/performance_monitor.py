@@ -88,9 +88,15 @@ class PerformanceMonitor:
             triggered_alert=d.get("triggered_alert", False),
         )
 
+    def _ensure_log_dir(self) -> None:
+        """Create the parent directory of log_path if it is non-empty."""
+        log_dir = os.path.dirname(self.log_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+
     def save_to_file(self) -> None:
         """Write the full history to a JSON-lines file."""
-        os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
+        self._ensure_log_dir()
         with open(self.log_path, "w", encoding="utf-8") as f:
             for record in self.history:
                 f.write(json.dumps(self._record_to_dict(record)) + "\n")
@@ -111,7 +117,7 @@ class PerformanceMonitor:
 
     def _append_to_file(self, record: PerformanceRecord) -> None:
         """Append a single record to the log file."""
-        os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
+        self._ensure_log_dir()
         with open(self.log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(self._record_to_dict(record)) + "\n")
 

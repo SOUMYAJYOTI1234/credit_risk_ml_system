@@ -75,6 +75,35 @@ class CreditFeatureTransformer(BaseEstimator, TransformerMixin):
         )
         return self
 
+    # Documented ranges from the UCI Credit Card Default paper
+    _CATEGORICAL_RANGES = {
+        "sex": (1, 2),           # 1=male, 2=female
+        "education": (1, 4),     # 1=grad school, 2=university, 3=high school, 4=others
+        "marriage": (1, 3),      # 1=married, 2=single, 3=others
+    }
+
+    def _validate_categoricals(self, df: pd.DataFrame) -> None:
+        """Warn about undocumented categorical values and clip to known ranges.
+
+        The UCI dataset contains undocumented values (e.g., education=0, 5, 6).
+        These are clipped to the nearest documented boundary so the model
+        receives inputs within a known distribution.
+        """
+        import warnings
+        for col, (lo, hi) in self._CATEGORICAL_RANGES.items():
+            if col not in df.columns:
+                continue
+            out_of_range = ~df[col].between(lo, hi)
+            if out_of_range.any():
+                bad_vals = sorted(df.loc[out_of_range, col].unique())
+                warnings.warn(
+                    f"Column '{col}' has undocumented values {bad_vals} "
+                    f"(expected {lo}–{hi}). Clipping to nearest boundary.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+                df[col] = df[col].clip(lower=lo, upper=hi)
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """Apply all feature engineering steps.
 
@@ -89,6 +118,9 @@ class CreditFeatureTransformer(BaseEstimator, TransformerMixin):
             DataFrame with 5 additional engineered features (28 columns).
         """
         df = pd.DataFrame(X) if not isinstance(X, pd.DataFrame) else X.copy()
+
+        # Validate categorical inputs (UCI dataset documented ranges)
+        self._validate_categoricals(df)
 
         # 1. Average bill amount
         df["avg_bill_amt"] = df[BILL_COLS].mean(axis=1)
@@ -131,7 +163,7 @@ class CreditFeatureTransformer(BaseEstimator, TransformerMixin):
 
 
 # ─────────────────────────────────────────────────────────────
-# Convenience wrapper (backward-compatible)
+# Convenience wrapper — EDA / notebook use only
 # ─────────────────────────────────────────────────────────────
 
 
@@ -141,21 +173,33 @@ def engineer_features(
 ) -> pd.DataFrame:
     """Apply all feature engineering steps (standalone, outside a Pipeline).
 
+    .. warning::
+       This function fits the payment-ratio cap on the **provided** DataFrame.
+       If called on test / production data, the cap will come from that data
+       (data leakage). For training + serving, use ``CreditFeatureTransformer``
+       inside a ``sklearn.Pipeline`` instead.
+
     Parameters
     ----------
     df : pd.DataFrame
         Cleaned credit-card dataset.
     payment_ratio_cap : float, optional
         Pre-computed cap for avg_payment_ratio. If None, the 99th percentile
-        of the current df is used (acceptable for EDA / notebooks, but the
-        Pipeline approach is preferred for training + serving).
+        of the current df is used.
 
     Returns
     -------
     pd.DataFrame
         Dataframe with 5 additional engineered features.
     """
-    logger.info("Engineering features …")
+    import warnings
+    warnings.warn(
+        "engineer_features() fits the payment-ratio cap on the provided df. "
+        "For training/serving, use CreditFeatureTransformer in a Pipeline.",
+        UserWarning,
+        stacklevel=2,
+    )
+    logger.info("Engineering features (standalone) …")
     transformer = CreditFeatureTransformer()
     transformer.fit(df)
     if payment_ratio_cap is not None:
@@ -163,6 +207,10 @@ def engineer_features(
     result = transformer.transform(df)
     logger.info("Feature engineering complete – new shape: %s", result.shape)
     return result
+
+
+# Explicit alias for EDA use
+engineer_features_for_eda = engineer_features
 
 
 # ─────────────────────────────────────────────────────────────
@@ -174,6 +222,8 @@ if __name__ == "__main__":
     from src.data_loader import load_cleaned_data
 
     df = load_cleaned_data()
-    df = engineer_features(df)
+    with __import__("warnings").catch_warnings():
+        __import__("warnings").simplefilter("ignore", UserWarning)
+        df = engineer_features(df)
     print(df[["avg_bill_amt", "credit_utilization", "avg_payment_ratio",
               "delay_score", "payment_trend"]].describe())

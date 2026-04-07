@@ -171,3 +171,20 @@ class TestModelPrediction:
         proba = pipeline.predict_proba(edge_case_zeros)
         assert not np.any(np.isnan(proba)), "NaN probability for all-zero input"
         assert 0.0 <= proba[0, 1] <= 1.0
+
+    def test_predict_undocumented_categoricals(self, sample_input):
+        """Undocumented categorical values (e.g., education=0) should be handled."""
+        if not os.path.exists(MODEL_PATH):
+            pytest.skip("Model file not available")
+        pipeline = joblib.load(MODEL_PATH)
+        # education=0 is undocumented in the UCI dataset
+        bad_input = sample_input.copy()
+        bad_input["education"] = 0
+        bad_input["marriage"] = 0
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            proba = pipeline.predict_proba(bad_input)
+        assert proba.shape == (1, 2)
+        assert 0.0 <= proba[0, 1] <= 1.0
+
