@@ -28,17 +28,7 @@ Three models were trained and evaluated on a held-out 20% test set (6,000 sample
 
 > **Random Forest** was selected as the production model based on the highest cross-validated ROC-AUC.
 
-### SHAP Feature Importance
 
-SHAP (SHapley Additive exPlanations) values reveal which features drive the model's predictions:
-
-![SHAP Feature Importance — Mean absolute SHAP values per feature](reports/shap_feature_importance.png)
-
-### SHAP Summary Plot
-
-The beeswarm plot shows the direction and magnitude of each feature's impact on individual predictions:
-
-![SHAP Summary Plot — Feature impact distribution on model output](reports/shap_summary_plot.png)
 
 ## 🗂️ Project Structure
 
@@ -133,7 +123,7 @@ jupyter notebook notebooks/
 
 ---
 
-## 🏋️ Training the Model
+##  Training the Model
 
 Run the full training pipeline from the command line:
 
