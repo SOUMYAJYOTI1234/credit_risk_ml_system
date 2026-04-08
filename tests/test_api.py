@@ -69,7 +69,9 @@ class TestHealthEndpoint:
         assert "status" in data
         assert "model_loaded" in data
         assert "version" in data
+        assert "active_threshold" in data
         assert data["status"] == "healthy"
+        assert isinstance(data["active_threshold"], float)
 
 
 class TestPredictEndpoint:

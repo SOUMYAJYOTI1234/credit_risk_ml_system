@@ -98,3 +98,6 @@ class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     version: str
+    active_threshold: float = Field(
+        ..., description="Decision threshold currently in use for predictions",
+    )

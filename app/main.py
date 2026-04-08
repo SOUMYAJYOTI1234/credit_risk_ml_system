@@ -96,6 +96,7 @@ async def root():
         status="healthy",
         model_loaded=MODEL is not None,
         version=VERSION,
+        active_threshold=THRESHOLD,
     )
 
 
